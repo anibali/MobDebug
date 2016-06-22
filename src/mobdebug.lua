@@ -11,6 +11,7 @@ local table = table or require "table"
 local string = string or require "string"
 local coroutine = coroutine or require "coroutine"
 local debug = require "debug"
+local readline_ok, readline = pcall(require, "readline")
 -- protect require "os" as it may fail on embedded systems without os module
 local os = os or (function(module)
   local ok, res = pcall(require, module)
@@ -1574,9 +1575,22 @@ local function listen(host, port)
     end
   end
 
+  local nextline
+  if readline_ok then
+    nextline = function()
+      local line = readline.readline("debug> ")
+      readline.add_history(line)
+      return line
+    end
+  else
+    nextline = function()
+      io.write("debug> ")
+      return io.read("*line")
+    end
+  end
+
   while true do
-    io.write("> ")
-    local file, line, err = handle(io.read("*line"), client)
+    local file, line, err = handle(nextline(), client)
     if not file and err == false then break end -- completed debugging
   end
 
